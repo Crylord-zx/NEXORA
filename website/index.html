@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nexora: movies, series and anime for Android</title>
+<meta name="description" content="Movies, web series and anime in one free Android app. Hindi audio, up to 1080p, no sign-up.">
+<meta name="theme-color" content="#000000">
+<meta property="og:title" content="Nexora">
+<meta property="og:description" content="Movies, web series and anime in one free Android app.">
+<meta property="og:image" content="assets/icon.png">
+<link rel="icon" href="assets/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://image.tmdb.org">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --a: #ff2d55; --b: #8b5cf6; --ar: 1.0; --ag: 0.176; --ab: 0.333; --br: 0.545; --bg: 0.361; --bb: 0.965;
+    --line: rgba(255,255,255,.1); --dim: #8a8a8a; --soft: #bdbdbd;
+    --spring: cubic-bezier(.32,.72,0,1);
+    --gut: clamp(20px, 5vw, 72px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: #000; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { background: #000; color: #fff; font: 400 17px/1.5 "Inter Tight", system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  img { display: block; max-width: 100%; }
+  em { font-family: "Instrument Serif", serif; font-style: italic; font-weight: 400; letter-spacing: -.01em; }
+  :focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .eyebrow { font-size: 13px; font-weight: 500; color: var(--dim); }
+
+  /* Top */
+  .nav { position: fixed; z-index: 30; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; padding: 18px var(--gut); transition: background 300ms ease, padding 400ms var(--spring); }
+  .nav.solid { padding-top: 12px; padding-bottom: 12px; background: rgba(0,0,0,.92); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .14em; font-size: 15px; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .nav-links { display: flex; align-items: center; gap: 30px; font-size: 14px; color: var(--soft); }
+  .nav-links a:not(.pill) { transition: color 200ms ease; }
+  .nav-links a:not(.pill):hover { color: #fff; }
+  .pill { display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: 999px; background: #fff; color: #000; font-weight: 600; font-size: 14px; }
+
+  /* Hero */
+  .hero { position: relative; min-height: 100svh; padding: 132px var(--gut) 0; text-align: center; overflow: hidden; isolation: isolate; }
+  #light { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; }
+  .hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; z-index: -1; height: 34%; background: linear-gradient(transparent, #000); pointer-events: none; }
+  .hero h1 { font-size: clamp(50px, 10.2vw, 148px); line-height: .98; font-weight: 600; letter-spacing: -.045em; }
+  .hero h1 em { font-size: 1.08em; letter-spacing: -.03em; }
+  .word { display: inline-block; overflow: hidden; vertical-align: top; padding: .06em .03em .14em; margin: -.06em -.03em -.14em; }
+  .word > span { display: inline-block; transform: translateY(112%); animation: rise 1300ms var(--spring) forwards; }
+  @keyframes rise { to { transform: none; } }
+  .lede { max-width: 520px; margin: 26px auto 0; font-size: clamp(17px, 1.6vw, 20px); color: var(--soft); opacity: 0; animation: fade 1000ms ease 700ms forwards; }
+  @keyframes fade { to { opacity: 1; } }
+  .cta { margin-top: 32px; opacity: 0; animation: fade 1000ms ease 900ms forwards; }
+  .get { position: relative; display: inline-flex; align-items: center; gap: 12px; height: 62px; padding: 0 32px; border-radius: 999px; background: #fff; color: #000; font-size: 18px; font-weight: 600; transition: transform 500ms var(--spring), box-shadow 400ms ease; }
+  .get { box-shadow: 0 0 46px -4px color-mix(in srgb, var(--a) 60%, transparent), 0 0 70px 6px color-mix(in srgb, var(--b) 34%, transparent); }
+  .get:hover { box-shadow: 0 0 60px 0 color-mix(in srgb, var(--a) 85%, transparent), 0 0 90px 10px color-mix(in srgb, var(--b) 50%, transparent); }
+  .get:active { scale: .97; }
+  .get svg { width: 20px; height: 20px; }
+  .meta { margin-top: 18px; font-size: 13px; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+  /* Phones */
+  .stage { perspective: 1400px; margin-top: 56px; }
+  .phone { position: relative; width: min(330px, 74vw); aspect-ratio: 600 / 1264; margin: 0 auto; padding: 9px; border-radius: 46px; background: linear-gradient(145deg, #3a3a3e, #101012 42%, #2a2a2e); box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 50px 120px -20px rgba(0,0,0,.9); }
+  .phone .glass { position: relative; width: 100%; height: 100%; border-radius: 37px; overflow: hidden; background: #000; }
+  .phone img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; opacity: 0; transition: opacity 700ms ease, transform 1100ms var(--spring); transform: scale(1.04); }
+  .phone img.on { opacity: 1; transform: none; }
+  #heroPhone { transform-origin: 50% 0; transform: rotateX(var(--tilt, 26deg)) translateY(var(--lift, 60px)); will-change: transform; margin-bottom: -44vh; }
+
+  /* Poster wall */
+  .wall { position: relative; padding: 40px 0; overflow: hidden; }
+  .wall::before, .wall::after { content: ""; position: absolute; z-index: 1; top: 0; bottom: 0; width: 12%; pointer-events: none; }
+  .wall::before { left: 0; background: linear-gradient(90deg, #000, transparent); }
+  .wall::after { right: 0; background: linear-gradient(270deg, #000, transparent); }
+  .lane { display: flex; gap: 14px; width: max-content; margin-bottom: 14px; animation: slide var(--t, 70s) linear infinite paused; }
+  .wall.run .lane { animation-play-state: running; }
+  .lane.back { animation-direction: reverse; }
+  .lane img { width: clamp(120px, 13vw, 176px); aspect-ratio: 2 / 3; border-radius: 10px; object-fit: cover; background: #111; }
+  @keyframes slide { to { transform: translate3d(-50%, 0, 0); } }
+
+  /* Sections */
+  section { position: relative; }
+  .big { font-size: clamp(38px, 6.4vw, 92px); line-height: 1.02; font-weight: 600; letter-spacing: -.04em; }
+  .r { opacity: 0; transform: translate3d(0, 34px, 0); transition: opacity 1000ms ease, transform 1200ms var(--spring); transition-delay: var(--d, 0ms); }
+  .r.in { opacity: 1; transform: none; }
+
+  .statement { padding: clamp(110px, 16vw, 200px) var(--gut) clamp(60px, 8vw, 110px); max-width: 1240px; margin: 0 auto; }
+  .statement .big span { color: #4c4c4c; transition: color 500ms ease; }
+  .statement .big span.lit { color: #fff; }
+
+  /* Pinned tour */
+  .tour { height: 360vh; }
+  .pin { position: sticky; top: 0; height: 100svh; display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 40px; max-width: 1240px; margin: 0 auto; padding: 0 var(--gut); overflow: hidden; }
+  .pin .halo { position: absolute; left: 75%; top: 50%; z-index: -1; width: 620px; height: 620px; translate: -50% -50%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--a) 30%, transparent), transparent); }
+  .steps { position: relative; min-height: 300px; }
+  .step { position: absolute; inset: 0; opacity: 0; transform: translate3d(0, 26px, 0); transition: opacity 600ms ease, transform 800ms var(--spring); pointer-events: none; }
+  .step.on { opacity: 1; transform: none; }
+  .step h3 { font-size: clamp(36px, 5vw, 70px); line-height: 1.03; font-weight: 600; letter-spacing: -.035em; }
+  .step p { max-width: 430px; margin-top: 18px; font-size: 19px; color: var(--soft); }
+  .ticks { display: flex; gap: 6px; margin-bottom: 26px; }
+  .ticks i { width: 34px; height: 3px; border-radius: 2px; background: rgba(255,255,255,.16); transition: background 400ms ease; }
+  .ticks i.on { background: var(--a); }
+
+  /* Numbers */
+  .figures { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 1240px; margin: 0 auto; padding: clamp(60px, 9vw, 120px) var(--gut); }
+  .fig { padding: 0 22px; border-left: 1px solid var(--line); }
+  .fig:first-child { border: 0; padding-left: 0; }
+  .fig b { display: block; font-size: clamp(42px, 5.6vw, 80px); line-height: 1; font-weight: 600; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+  .fig span { display: block; margin-top: 10px; font-size: 14px; color: var(--dim); }
+
+  /* Features as an index */
+  .index { max-width: 1240px; margin: 0 auto; padding: clamp(50px, 8vw, 100px) var(--gut); }
+  .index .big { margin-bottom: clamp(36px, 5vw, 64px); }
+  .item { display: grid; grid-template-columns: 56px 1fr 1.1fr; gap: 20px; align-items: baseline; padding: 26px 0; border-top: 1px solid var(--line); transition: padding-left 600ms var(--spring); }
+  .item:last-child { border-bottom: 1px solid var(--line); }
+  .item:hover { padding-left: 14px; }
+  .item small { font-size: 13px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .item h3 { font-size: clamp(24px, 3vw, 38px); font-weight: 600; letter-spacing: -.025em; line-height: 1.1; }
+  .item p { color: var(--soft); }
+
+  /* Colours */
+  .tint { padding: clamp(80px, 12vw, 160px) var(--gut); text-align: center; overflow: hidden; }
+  .tint::before { content: ""; position: absolute; left: 50%; top: 50%; z-index: -1; width: min(900px, 120vw); height: 500px; translate: -50% -50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--a) 34%, transparent), transparent); transition: background 600ms ease; }
+  .tint p { max-width: 460px; margin: 18px auto 0; color: var(--soft); }
+  .dots { display: flex; justify-content: center; gap: 16px; margin-top: 36px; }
+  .dot { width: 46px; height: 46px; border-radius: 50%; background: var(--c); transition: transform 500ms cubic-bezier(.34,1.4,.64,1), box-shadow 300ms ease; }
+  .dot:hover { transform: scale(1.1); }
+  .dot[aria-checked="true"] { box-shadow: 0 0 0 3px #000, 0 0 0 5px #fff; }
+
+  /* Install */
+  .install { max-width: 1240px; margin: 0 auto; padding: clamp(50px, 8vw, 100px) var(--gut); }
+  .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; margin-top: clamp(36px, 5vw, 60px); }
+  .how h3 { margin-top: 12px; font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
+  .how p { margin-top: 8px; color: var(--soft); }
+  .how small { font-family: "Instrument Serif", serif; font-style: italic; font-size: 44px; line-height: 1; color: var(--a); transition: color 600ms ease; }
+
+  /* Questions */
+  .faq { max-width: 860px; margin: 0 auto; padding: clamp(50px, 8vw, 100px) var(--gut); }
+  .faq .big { margin-bottom: 36px; }
+  details { border-top: 1px solid var(--line); }
+  details:last-of-type { border-bottom: 1px solid var(--line); }
+  summary { display: flex; justify-content: space-between; gap: 20px; padding: 22px 0; font-size: 20px; font-weight: 500; letter-spacing: -.01em; list-style: none; cursor: pointer; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; flex: none; font-size: 24px; line-height: 1.2; color: var(--dim); transition: transform 400ms var(--spring); }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p { padding: 0 40px 24px 0; color: var(--soft); }
+
+  /* End */
+  .end { padding: clamp(90px, 13vw, 170px) var(--gut) 0; text-align: center; overflow: hidden; }
+  .end .big { margin-bottom: 34px; }
+  .wordmark { margin-top: clamp(70px, 10vw, 130px); font-size: 21.5vw; line-height: .78; font-weight: 700; letter-spacing: -.045em; white-space: nowrap; background: linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,0) 92%); -webkit-background-clip: text; background-clip: text; color: transparent; user-select: none; }
+  footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 14px 30px; padding: 26px var(--gut) 30px; border-top: 1px solid var(--line); font-size: 13px; color: var(--dim); }
+  footer nav { display: flex; gap: 22px; }
+  footer a:hover { color: #fff; }
+
+  /* However slow the phone, the words and the button are on screen within two seconds */
+  .shown .word > span, .shown .lede, .shown .cta { animation: none; transform: none; opacity: 1; }
+
+  /* Final touches */
+  html { scroll-padding-top: 80px; -webkit-tap-highlight-color: transparent; interpolate-size: allow-keywords; }
+  .nav::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--a), var(--b)); transform: scaleX(var(--p, 0)); transform-origin: left; opacity: .9; }
+  details::details-content { block-size: 0; overflow: hidden; transition: block-size 460ms var(--spring), content-visibility 460ms allow-discrete; }
+  details[open]::details-content { block-size: auto; }
+  .item h3 { transition: color 300ms ease; }
+  @media (hover: hover) { .item:hover h3 { color: var(--a); } }
+  .mbar { display: none; }
+  .sheet { position: fixed; z-index: 50; inset: 0; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.62); opacity: 0; pointer-events: none; transition: opacity 300ms ease; }
+  .sheet.on { opacity: 1; pointer-events: auto; }
+  .sheet > div { width: 100%; max-width: 460px; padding: 14px 22px calc(22px + env(safe-area-inset-bottom)); border-radius: 26px 26px 0 0; background: #151517; transform: translate3d(0, 100%, 0); transition: transform 560ms var(--spring); }
+  .sheet.on > div { transform: none; }
+  .sheet i { display: block; width: 36px; height: 4px; margin: 0 auto 18px; border-radius: 2px; background: rgba(255,255,255,.22); }
+  .sheet h3 { font-size: 24px; font-weight: 600; letter-spacing: -.02em; }
+  .sheet ol { margin: 14px 0 20px; padding-left: 20px; color: var(--soft); }
+  .sheet li { padding: 3px 0; }
+  .sheet button { width: 100%; height: 52px; border-radius: 14px; background: #fff; color: #000; font-weight: 600; }
+
+  @media (max-width: 860px) {
+    .nav { padding-top: calc(14px + env(safe-area-inset-top)); }
+    .nav-links a:not(.pill) { display: none; }
+    .hero { padding-top: calc(100px + env(safe-area-inset-top)); }
+    .hero h1 { font-size: 13.8vw; }
+    .lede { margin-top: 18px; font-size: 17px; }
+    .cta { margin-top: 26px; }
+    .get { height: 60px; width: 100%; max-width: 340px; justify-content: center; padding: 0 22px; }
+    .stage { margin-top: 44px; }
+    #heroPhone { width: 68vw; }
+    .wall { padding: 18px 0; }
+    .lane { gap: 10px; margin-bottom: 10px; }
+    .lane img { width: 108px; border-radius: 8px; }
+    .statement { padding-top: 84px; padding-bottom: 40px; }
+    .big { font-size: 11vw; }
+    .item { padding: 22px 0; gap: 8px 12px; }
+    .item h3 { font-size: 25px; }
+    .fig b { font-size: 12vw; }
+    .fig { padding: 0 16px; }
+    summary { font-size: 18px; min-height: 64px; align-items: center; padding: 14px 0; }
+    .dot { width: 52px; height: 52px; }
+    .dots { gap: 12px; }
+    footer { flex-direction: column; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+    .mbar { position: fixed; z-index: 25; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 11px; padding: 8px 8px 8px 10px; border-radius: 20px; background: #18181b; box-shadow: inset 0 0 0 1px rgba(255,255,255,.1), 0 16px 40px rgba(0,0,0,.6); transform: translate3d(0, 160%, 0); transition: transform 560ms var(--spring); }
+    .mbar.on { transform: none; }
+    .mbar img { width: 40px; height: 40px; border-radius: 10px; }
+    .mbar div { flex: 1; min-width: 0; line-height: 1.2; font-weight: 600; font-size: 15px; }
+    .mbar small { display: block; font-weight: 400; font-size: 12px; color: var(--dim); }
+    .mbar a { flex: none; display: flex; align-items: center; height: 46px; padding: 0 20px; border-radius: 14px; background: #fff; color: #000; font-weight: 600; font-size: 15px; }
+    .tour { height: 300vh; }
+    .pin { grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: 14px; padding-top: 84px; padding-bottom: 12px; align-items: start; }
+    .pin .halo { left: 50%; top: 66%; }
+    .steps { min-height: 190px; }
+    .step h3 { font-size: 34px; }
+    .step p { font-size: 16px; margin-top: 10px; }
+    .ticks { margin-bottom: 14px; }
+    .pin .phone { width: auto; height: min(54svh, 118vw); margin-top: 6px; border-radius: 34px; padding: 7px; }
+    .pin .glass { border-radius: 28px; }
+    .figures { grid-template-columns: 1fr 1fr; gap: 34px 0; }
+    .fig:nth-child(odd) { border: 0; padding-left: 0; }
+    .item { grid-template-columns: 34px 1fr; }
+    .item p { grid-column: 2; }
+    .how { grid-template-columns: 1fr; gap: 30px; }
+    #heroPhone { margin-bottom: -30vh; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .word > span, .lede, .cta { animation: none; transform: none; opacity: 1; }
+    .lane { animation: none; }
+    .r { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+</head>
+<body>
+<header class="nav" id="nav">
+  <a class="brand" href="#top"><img src="assets/icon.png" alt="">NEXORA</a>
+  <div class="nav-links">
+    <a href="#tour">Inside</a>
+    <a href="#features">Features</a>
+    <a href="#install">Install</a>
+    <a href="#questions">Questions</a>
+    <a class="pill" href="https://relay.edge-relay-7k3q.workers.dev/update.apk">Download</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" id="hero">
+    <canvas id="light" aria-hidden="true"></canvas>
+    <h1 aria-label="Press play on everything.">
+      <span class="word" aria-hidden="true"><span>Press</span></span> <span class="word" aria-hidden="true"><span style="animation-delay:90ms">play</span></span> <span class="word" aria-hidden="true"><span style="animation-delay:180ms">on</span></span><br>
+      <span class="word" aria-hidden="true"><span style="animation-delay:280ms"><em>everything.</em></span></span>
+    </h1>
+    <p class="lede">Movies, web series and anime in one free Android app. Hindi audio, up to 1080p, no sign-up.</p>
+    <div class="cta">
+      <a class="get" id="magnet" href="https://relay.edge-relay-7k3q.workers.dev/update.apk">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.500 11 12 15.500 16.500 11M5 20h14"/></svg>
+        Download for Android
+      </a>
+      <p class="meta">Version 1.0.0 · 222 KB · Android 7.0+</p>
+    </div>
+    <div class="stage"><div class="phone" id="heroPhone"><div class="glass"><img class="on" src="assets/home.jpg" alt="Nexora home screen"></div></div></div>
+  </section>
+
+  <div class="wall" id="wall" aria-hidden="true"></div>
+
+  <section class="statement"><p class="big" id="statement">The whole library. The language you want. A picture worth watching, and not one account to create.</p></section>
+
+  <section class="tour" id="tour">
+    <div class="pin">
+      <div class="halo"></div>
+      <div>
+        <div class="ticks" id="ticks"><i class="on"></i><i></i><i></i></div>
+        <div class="steps" id="steps">
+          <div class="step on"><h3>Opens on what's <em>worth</em> watching.</h3><p>Top 10 in India, trending now, Hindi hits, South Indian films, anime, and one tap to pick up where you stopped.</p></div>
+          <div class="step"><h3>One tap, and it <em>plays.</em></h3><p>Choose Hindi once and Nexora looks for it. If a server fails, the next one is a tap away.</p></div>
+          <div class="step"><h3>Quietly <em>yours.</em></h3><p>Your photo, your colours, your streaks and achievements. Saved on your phone, with a backup when you change it.</p></div>
+        </div>
+      </div>
+      <div class="phone"><div class="glass" id="tourGlass">
+        <img class="on" src="assets/home.jpg" alt="Nexora home" loading="lazy">
+        <img src="assets/player.jpg" alt="Nexora player" loading="lazy">
+        <img src="assets/profile.jpg" alt="Nexora profile" loading="lazy">
+      </div></div>
+    </div>
+  </section>
+
+  <section class="figures">
+    <div class="fig r"><b data-to="222">222</b><span>KB to download. Not a typo.</span></div>
+    <div class="fig r" style="--d:80ms"><b>1080p</b><span>Sharpest picture the stream offers</span></div>
+    <div class="fig r" style="--d:160ms"><b data-to="28">28</b><span>Servers in the app, one tap apart</span></div>
+    <div class="fig r" style="--d:240ms"><b>0</b><span>Accounts, sign-ups or passwords</span></div>
+  </section>
+
+  <section class="index" id="features">
+    <h2 class="big r">Built for how you <em>actually</em> watch.</h2>
+    <div class="item r"><small>01</small><h3>Hindi comes first</h3><p>Pick your audio once. Nexora selects the Hindi track by itself on the servers that carry one.</p></div>
+    <div class="item r"><small>02</small><h3>No blurry starts</h3><p>The app keeps the sharpest picture a stream offers, up to 1080p, so it doesn't settle on 480p.</p></div>
+    <div class="item r"><small>03</small><h3>Pop-ups refused</h3><p>Players can't open pop-ups or send you to another site. The app stops them before you see them.</p></div>
+    <div class="item r"><small>04</small><h3>Anime, dubbed</h3><p>Dedicated anime and cartoon sources with Hindi dubs, tried first when you ask for Hindi.</p></div>
+    <div class="item r"><small>05</small><h3>Never lose your place</h3><p>Continue Watching, My List and next episode are all there, with no account behind them.</p></div>
+    <div class="item r"><small>06</small><h3>Updates inside the app</h3><p>Check for updates in Profile. Tap, install, and your list stays where it was.</p></div>
+  </section>
+
+  <section class="tint">
+    <h2 class="big r">Make it <em>yours.</em></h2>
+    <p class="r">Five colours in the app. Try one here.</p>
+    <div class="dots r" id="dots" role="radiogroup" aria-label="Accent colour"></div>
+  </section>
+
+  <section class="install" id="install">
+    <h2 class="big r">Watching in a <em>minute.</em></h2>
+    <div class="how">
+      <div class="r"><small>1</small><h3>Download</h3><p>Tap Download. The file saves to your phone in seconds.</p></div>
+      <div class="r" style="--d:90ms"><small>2</small><h3>Allow the install</h3><p>Open the file. If Android asks, allow your browser to install unknown apps.</p></div>
+      <div class="r" style="--d:180ms"><small>3</small><h3>Press play</h3><p>Tap Install, then Open. Nothing to sign up for.</p></div>
+    </div>
+  </section>
+
+  <section class="faq" id="questions">
+    <h2 class="big r">Good questions.</h2>
+    <details class="r"><summary>Is Nexora free?</summary><p>Yes. No subscription and no account.</p></details>
+    <details class="r"><summary>Why isn't it on the Play Store?</summary><p>Nexora is shared directly as an APK, so Android may ask you to allow the install once. Updates then come through Check for updates in the app.</p></details>
+    <details class="r"><summary>Are there ads?</summary><p>Nexora has no ads of its own. Videos come from third-party players, and some of them show ads. The app blocks their pop-ups and redirects.</p></details>
+    <details class="r"><summary>Will every title have Hindi?</summary><p>Not always. It depends on the title and the server. If one server doesn't have it, try the next.</p></details>
+    <details class="r"><summary>Does it work on iPhone?</summary><p>Not yet. Nexora is for Android 7.0 and newer.</p></details>
+    <details class="r"><summary>What do you collect?</summary><p>An anonymous device count, version, country and what is played, so we know what people use. No names, no accounts, and no saved IP addresses.</p></details>
+  </section>
+
+  <section class="end">
+    <h2 class="big r">Tonight's <em>sorted.</em></h2>
+    <a class="get r" href="https://relay.edge-relay-7k3q.workers.dev/update.apk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.500 11 12 15.500 16.500 11M5 20h14"/></svg>
+      Download for Android
+    </a>
+    <div class="wordmark" aria-hidden="true">NEXORA</div>
+  </section>
+</main>
+
+<aside class="mbar" id="mbar">
+  <img src="assets/icon.png" alt="">
+  <div>Nexora<small>Free · 222 KB</small></div>
+  <a href="https://relay.edge-relay-7k3q.workers.dev/update.apk">Download</a>
+</aside>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div>
+    <i></i>
+    <h3 id="sheetTitle">Your download has started</h3>
+    <ol>
+      <li>Open <b>nexora.apk</b> from your notifications.</li>
+      <li>If Android asks, allow your browser to install apps.</li>
+      <li>Tap Install, then Open.</li>
+    </ol>
+    <button type="button" id="sheetClose">Got it</button>
+  </div>
+</div>
+
+<footer>
+  <span>Developed by <a href="https://www.instagram.com/anshxr.yn/" rel="noopener">anshxr.yn</a>. This product uses the TMDB API but is not endorsed or certified by TMDB.</span>
+  <nav><a href="https://www.instagram.com/anshxr.yn/" rel="noopener">Instagram</a><a href="https://github.com/Crylord-zx/NEXORA/releases" rel="noopener">Releases</a></nav>
+</footer>
+
+<script>
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  setTimeout(() => document.documentElement.classList.add('shown'), 2000);
+  const root = document.documentElement;
+  const colours = [
+    ['Rose', '#ff2d55', '#8b5cf6'], ['Violet', '#a06bff', '#5b7cff'], ['Ocean', '#2fa8ff', '#22d3c5'],
+    ['Emerald', '#2bd17e', '#14b8a6'], ['Gold', '#f5b83d', '#f0803c']];
+  const rgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
+  const tint = { a: rgb(colours[0][1]), b: rgb(colours[0][2]), goalA: rgb(colours[0][1]), goalB: rgb(colours[0][2]) };
+
+  // Colour picker
+  const dots = document.getElementById('dots');
+  colours.forEach(([name, a, b], i) => {
+    const dot = document.createElement('button');
+    dot.className = 'dot';
+    dot.type = 'button';
+    dot.style.setProperty('--c', a);
+    dot.setAttribute('role', 'radio');
+    dot.setAttribute('aria-label', name);
+    dot.setAttribute('aria-checked', String(i === 0));
+    dot.addEventListener('click', () => {
+      root.style.setProperty('--a', a);
+      root.style.setProperty('--b', b);
+      tint.goalA = rgb(a); tint.goalB = rgb(b);
+      dots.querySelectorAll('.dot').forEach(d => d.setAttribute('aria-checked', String(d === dot)));
+      try { localStorage.setItem('nx_colour', name); } catch (e) {}
+    });
+    dots.append(dot);
+  });
+  try { [...dots.children].find(d => d.getAttribute('aria-label') === localStorage.getItem('nx_colour'))?.click(); } catch (e) {}
+
+  // Projector light: rays from a lens above the page, in the Nexora colours
+  (function light() {
+    const canvas = document.getElementById('light');
+    const gl = canvas.getContext('webgl', { antialias: false, alpha: false, powerPreference: 'low-power' });
+    if (!gl) { canvas.style.background = 'radial-gradient(60% 60% at 50% 0, color-mix(in srgb, var(--a) 40%, #000), #000)'; return; }
+    const phoneLike = matchMedia('(pointer: coarse)').matches;
+    const vs = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+    const fs = `precision mediump float;
+      uniform vec2 R;uniform float T;uniform vec2 M;uniform vec3 A;uniform vec3 B;
+      float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+      float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+        return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+      float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<2;i++){v+=a*n(p);p*=2.03;a*=.5;}return v;}
+      void main(){
+        vec2 uv=(gl_FragCoord.xy-.5*R)/R.y;
+        vec2 o=vec2(M.x*.22,.78+M.y*.04);
+        vec2 d=uv-o;
+        float r=length(d),a=atan(d.x,-d.y);
+        float rays=fbm(vec2(a*5.5+T*.06,T*.05))*.75+fbm(vec2(a*15.-T*.04,T*.09+3.))*.45;
+        rays=smoothstep(.34,1.02,rays);
+        float cone=smoothstep(1.28,.0,abs(a));
+        float fall=exp(-r*.92);
+        float dust=n(uv*4.+vec2(T*.05,-T*.08));
+        float glow=exp(-r*r*7.)*.55;
+        vec3 col=mix(A,B,smoothstep(-.5,.55,uv.x+sin(a*2.+T*.1)*.18));
+        vec3 c=col*(rays*cone*fall*(.55+dust*.9)*1.75+glow);
+        c+=vec3(1.)*exp(-r*r*46.)*.5;
+        c+=(h(gl_FragCoord.xy+T)-.5)*.022;
+        gl_FragColor=vec4(c,1.);
+      }`;
+    const shader = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
+    const prog = gl.createProgram();
+    gl.attachShader(prog, shader(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+    const at = gl.getAttribLocation(prog, 'p');
+    gl.enableVertexAttribArray(at);
+    gl.vertexAttribPointer(at, 2, gl.FLOAT, false, 0, 0);
+    const u = name => gl.getUniformLocation(prog, name);
+    const R = u('R'), T = u('T'), M = u('M'), A = u('A'), B = u('B');
+    const fit = () => {
+      // The light is soft, so a small buffer looks the same and costs a fraction
+      const scale = Math.min(1, (phoneLike ? 420 : 720) / canvas.clientWidth);
+      canvas.width = canvas.clientWidth * scale;
+      canvas.height = canvas.clientHeight * scale;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+    };
+    addEventListener('resize', fit, { passive: true });
+    fit();
+    const mouse = [0, 0], goal = [0, 0];
+    addEventListener('pointermove', e => { goal[0] = e.clientX / innerWidth * 2 - 1; goal[1] = 1 - e.clientY / innerHeight * 2; }, { passive: true });
+    let seen = true, began = false;
+    new IntersectionObserver(([e]) => { seen = e.isIntersecting; if (seen && began) requestAnimationFrame(draw); }).observe(canvas);
+    // 30 frames a second, and a device that can't keep up gets one still frame instead of a slow page
+    let last = 0, slow = 0, frames = 0;
+    function draw(now) {
+      if (!seen) return;
+      if (now - last < (phoneLike ? 44 : 32)) return requestAnimationFrame(draw);
+      if (last) { frames++; if (now - last > 70) slow++; }
+      last = now;
+      mouse[0] += (goal[0] - mouse[0]) * .04; mouse[1] += (goal[1] - mouse[1]) * .04;
+      for (const k of ['a', 'b']) tint[k] = tint[k].map((v, i) => v + ((k === 'a' ? tint.goalA : tint.goalB)[i] - v) * .05);
+      gl.uniform2f(R, canvas.width, canvas.height);
+      gl.uniform1f(T, calm ? 10 : now / 1000);
+      gl.uniform2f(M, mouse[0], mouse[1]);
+      gl.uniform3fv(A, tint.a);
+      gl.uniform3fv(B, tint.b);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      if (frames > 6 && slow / frames > .5) return;
+      if (!calm) requestAnimationFrame(draw);
+    }
+    // The words come first: on a slow graphics chip the light would otherwise hold them back
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    canvas.style.opacity = 0;
+    canvas.style.transition = 'opacity 1600ms ease';
+    setTimeout(() => { began = true; canvas.style.opacity = 1; requestAnimationFrame(draw); }, calm ? 0 : 1700);
+  })();
+
+  // Poster wall
+  const wall = document.getElementById('wall');
+  const buildWall = () => fetch('assets/posters.json').then(r => r.json()).then(paths => {
+    const per = Math.min(14, Math.ceil(paths.length / 3));
+    [0, 1, 2].forEach(i => {
+      const lane = document.createElement('div');
+      lane.className = i % 2 ? 'lane back' : 'lane';
+      lane.style.setProperty('--t', `${90 + i * 18}s`);
+      const set = paths.slice(i * per, (i + 1) * per);
+      [...set, ...set].forEach(p => {
+        const img = document.createElement('img');
+        img.src = `https://image.tmdb.org/t/p/w342${p}`;
+        img.alt = '';
+        img.loading = 'lazy';
+        lane.append(img);
+      });
+      wall.append(lane);
+    });
+  }).catch(() => {});
+  // Posters load when the wall is near, and only move while it is on screen
+  let wallBuilt = false;
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !wallBuilt) { wallBuilt = true; buildWall(); }
+    wall.classList.toggle('run', e.isIntersecting);
+  }, { rootMargin: '500px 0px' }).observe(wall);
+
+  // Reveal on scroll
+  const seen = new IntersectionObserver(entries => entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.classList.add('in');
+    seen.unobserve(e.target);
+    const to = e.target.querySelector?.('[data-to]');
+    if (to && !calm) {
+      const end = +to.dataset.to, start = performance.now();
+      const tick = now => { const t = Math.min((now - start) / 1100, 1); to.textContent = Math.round(end * (1 - Math.pow(1 - t, 3))); if (t < 1) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    }
+  }), { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.r').forEach(el => seen.observe(el));
+
+  // The statement lights up word by word as it scrolls
+  const statement = document.getElementById('statement');
+  statement.innerHTML = statement.textContent.split(' ').map(w => `<span>${w}</span>`).join(' ');
+  const words = [...statement.children];
+
+  // Scroll: hero phone flattens, statement fills in, tour changes screens
+  const nav = document.getElementById('nav'), phone = document.getElementById('heroPhone'), mbar = document.getElementById('mbar');
+  const tour = document.getElementById('tour'), shots = [...document.querySelectorAll('#tourGlass img')];
+  const steps = [...document.querySelectorAll('.step')], ticks = [...document.querySelectorAll('#ticks i')];
+  let queued = false, screen = 0;
+  function onScroll() {
+    queued = false;
+    const y = scrollY, vh = innerHeight;
+    nav.classList.toggle('solid', y > 40);
+    const page = document.documentElement.scrollHeight - vh;
+    nav.style.setProperty('--p', page > 0 ? (y / page).toFixed(4) : 0);
+    const end = document.querySelector('.end').getBoundingClientRect().top;
+    mbar.classList.toggle('on', y > vh * .7 && end > vh * .55);
+    const flat = Math.min(y / (vh * .6), 1);
+    if (!calm) { phone.style.setProperty('--tilt', `${26 * (1 - flat)}deg`); phone.style.setProperty('--lift', `${60 * (1 - flat)}px`); }
+    const box = statement.getBoundingClientRect();
+    const fill = Math.max(0, Math.min(1, (vh * .85 - box.top) / (box.height + vh * .4)));
+    words.forEach((w, i) => w.classList.toggle('lit', i / words.length < fill));
+    const t = tour.getBoundingClientRect();
+    const through = Math.max(0, Math.min(.999, -t.top / (t.height - vh)));
+    const now = Math.floor(through * steps.length);
+    if (now !== screen) {
+      screen = now;
+      [shots, steps, ticks].forEach(set => set.forEach((el, i) => el.classList.toggle('on', i === now)));
+    }
+  }
+  addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(onScroll); } }, { passive: true });
+  addEventListener('resize', onScroll, { passive: true });
+  onScroll();
+
+  // After a tap on Download: what to do next. An iPhone is told first, instead of getting a file it can't open
+  const sheet = document.getElementById('sheet');
+  const iPhone = /iP(hone|ad|od)/.test(navigator.userAgent);
+  document.querySelectorAll('a[href$="update.apk"]').forEach(link => link.addEventListener('click', e => {
+    if (iPhone) {
+      e.preventDefault();
+      document.getElementById('sheetTitle').textContent = 'Nexora is for Android';
+      sheet.querySelector('ol').innerHTML = '<li>The iPhone version is not out yet.</li>';
+    }
+    setTimeout(() => sheet.classList.add('on'), 350);
+  }));
+  const closeSheet = () => sheet.classList.remove('on');
+  document.getElementById('sheetClose').addEventListener('click', closeSheet);
+  sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+
+  // The main button leans toward the cursor
+  const magnet = document.getElementById('magnet');
+  if (matchMedia('(hover: hover)').matches && !calm) {
+    magnet.addEventListener('pointermove', e => {
+      const b = magnet.getBoundingClientRect();
+      magnet.style.transform = `translate(${(e.clientX - b.left - b.width / 2) * .16}px, ${(e.clientY - b.top - b.height / 2) * .24}px)`;
+    });
+    magnet.addEventListener('pointerleave', () => { magnet.style.transform = ''; });
+  }
+</script>
+</body>
+</html>
