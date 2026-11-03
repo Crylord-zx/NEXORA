@@ -1,4 +1,4 @@
-// Renders showreel.html to nexora-promo.mp4: 1080x1920, 30 fps, 20 s, with real motion blur
+// Renders showreel.html to nexora-promo-master.mp4 (and the lighter nexora-promo.mp4): 1080x1920, 30 fps, 20 s, with real motion blur
 // (each output frame averages SUB sub-frames spread over a 180-degree shutter) and soundtrack.wav.
 // Usage: node render.js [workers=4] [sub=4]
 const { chromium } = require('playwright');
@@ -46,6 +46,9 @@ async function worker(w, from, to, browser) {
   fs.writeFileSync(list, segs.map(s => `file '${s}'`).join('\n'));
   execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', list, '-i', path.join(dir, 'soundtrack.wav'),
     '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-1:LRA=11', '-c:a', 'aac', '-b:a', '256k', '-ar', '48000',
-    '-shortest', '-movflags', '+faststart', path.join(dir, 'nexora-promo.mp4')], { stdio: 'inherit' });
+    '-shortest', '-movflags', '+faststart', path.join(dir, 'nexora-promo-master.mp4')], { stdio: 'inherit' });
+  // a lighter copy for sharing (the one kept in the repo)
+  execFileSync('ffmpeg', ['-loglevel', 'error', '-y', '-i', path.join(dir, 'nexora-promo-master.mp4'), '-c:v', 'libx264', '-preset', 'slow', '-crf', '19',
+    '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-level', '4.2', '-c:a', 'copy', '-movflags', '+faststart', path.join(dir, 'nexora-promo.mp4')], { stdio: 'inherit' });
   console.log(`done in ${((Date.now() - t0) / 1000).toFixed(0)} s -> nexora-promo.mp4`);
 })();

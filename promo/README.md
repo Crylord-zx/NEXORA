@@ -1,6 +1,6 @@
 # Nexora promo showreel
 
-`nexora-promo.mp4`: a 20-second vertical promo (1080×1920, 30 fps, H.264 + AAC), made for Reels, Shorts and Status.
+`nexora-promo.mp4`: a 20-second vertical promo (1080×1920, 30 fps, H.264 + AAC, 24 MB), made for Reels, Shorts and Status. `node render.js` also writes a higher-bitrate `nexora-promo-master.mp4`, which is not kept in git.
 
 | Time | Beat |
 | --- | --- |
