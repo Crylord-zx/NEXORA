@@ -33,4 +33,14 @@ for fam in "Archivo:wdth,wght@62..125,100..900" "JetBrains+Mono:wght@400..700" "
   url=$(curl -sS -A "$UA" "https://fonts.googleapis.com/css2?family=${fam}&display=block" | python3 -c "import sys,re;c=sys.stdin.read();print([u for s,b in re.findall(r'/\\* (.*?) \\*/\\s*@font-face \\{(.*?)\\}',c,re.S) if s=='latin' for u in re.findall(r'url\\((.*?)\\)',b)][0])")
   curl -sS -o "cache/fonts/${name}.woff2" "$url"
 done
+# Inter Tight (variable) and the Devanagari face for "हिंदी"
+curl -sS -A "$UA" "https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@700&family=Inter+Tight:wght@100..900&display=block" | python3 -c "
+import sys, re, subprocess
+c = sys.stdin.read()
+for sub, b in re.findall(r'/\\* (.*?) \\*/\\s*@font-face \\{(.*?)\\}', c, re.S):
+    fam = re.search(r\"font-family: '(.*?)'\", b).group(1)
+    if (fam.startswith('Noto') and sub == 'devanagari') or (fam == 'Inter Tight' and sub == 'latin'):
+        name = 'cache/fonts/' + ('Devanagari' if fam.startswith('Noto') else 'InterTightVar') + '.woff2'
+        subprocess.run(['curl', '-sS', '-o', name, re.search(r'url\\((.*?)\\)', b).group(1)], check=True)
+"
 echo "assets ready"

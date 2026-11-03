@@ -97,7 +97,7 @@ The original source of each version is in git history (see each prompt).
 >
 > Sound: a trailer design of ticks, braams, impacts, a 16th-note ostinato, taiko, risers and a splash sting, all hit-synced to the cuts.
 
-## 4. Showreel cut to the song (latest, git `16030da`)
+## 4. Showreel cut to the song (git `16030da`)
 
 > Make a 20-second vertical (1080×1920, 60 fps) showreel for NEXORA, in the style of a modern app showreel. Use these elements:
 > - A dark `#050507` stage with soft drifting rose and violet glows.
@@ -121,5 +121,35 @@ The original source of each version is in git history (see each prompt).
 > 10. **15.64–16.50 s:** "FREE." in rose on black, then "NO SIGN-UP." in black on white.
 > 11. **16.50–18.22 s:** The app's exact launch splash (see Assets).
 > 12. **18.22–20 s:** The splash moves up and the end card appears: "Movies, series & anime. *Free on Android.*", a rose "Download for Android" pill with a tap, and "FREE · NO SIGN-UP · 222 KB · ANDROID 7.0+".
+>
+> Do not mention servers or pop-ups.
+
+## 5. Component showreel (latest)
+
+> Study the best-rated videos and prompts on prompt-motion.com, then make a 20-second vertical (1080×1920, 60 fps) showreel for NEXORA, cut to the song from the reference video (139.6 BPM, a bar every 1.719 s from 1.03 s, with a break at 13.5–14.8 s and the drop at 14.78 s).
+>
+> Rules:
+> - No raw screenshots: rebuild the app UI as live components so every part animates.
+> - One continuous chain of morphs.
+> - Light and dark scenes flip on the cut.
+> - The text morphs.
+> - The motion follows the music: drive the waveform and beat bumps from the song's real loudness and spectrum.
+> - No HUD or corner labels.
+> - Use the Nexora website's type system: Inter Tight, with one Instrument Serif italic word per line in a rose → violet gradient, each word revealed with a mask.
+>
+> Shots:
+> 1. **0–1.03 s:** A search bar types "Something to watch tonight" with a rose caret.
+> 2. **1.03–2.75 s:** The search bar morphs into a rose Play button (the magnifier turns into a triangle) under "Press *play*". A ripple on each beat, then a tap, and the button bursts into sparks.
+> 3. **2.75–4.47 s:** Posters fly out of the burst into a rotating 3D ring, seen from slightly above, under "on *everything.*"
+> 4. **4.47–6.19 s:** The ring collapses into the app's home rows (3×3) as a rose outline draws the phone around them and the phone shell fades in. The top bar, the typed row titles (Trending in India, Hindi hits, South Indian) and the tab bar appear. "Opens on what's *worth* watching."
+> 5. **6.19–7.91 s:** Light mode (`#F2EDE7`): "Top 10 in *India.*" A giant outlined numeral slot-rolls 8 → 1 on every 8th note as posters slide in over it, ending on a "#1 IN INDIA" tag.
+> 6. **7.91–9.63 s:** "Hindi audio, *first.*" The Hindi / English / Original picker. The underline slides from Original to Hindi with a tap, Hindi moves to the centre and grows, then morphs into "हिंदी" (Noto Sans Devanagari, gradient), over 40 mirrored waveform bars driven by the song's spectrum.
+> 7. **9.63–11.35 s:** "One tap, it *plays.*" Verity's poster, title and meta, then the white Play pill is tapped and grows into the 16:9 video frame. A gradient badge below it rolls 480p → 720p → 1080p with scrambled digits.
+> 8. **11.35–13.06 s:** "Never lose your *place.*" A typed "Continue watching" label, a landscape card whose progress bar fills to 64%, and Resume / + My List pills. My List is tapped and a gradient circle-wipe turns it into "✓ In My List" as the tick draws. Then a toast: "Saved on your phone. No account."
+> 9. **13.06–14.78 s (the break):** "Make it *yours.*" A conic-gradient avatar ring recolours on each beat through the five accents. The headline and the background glow follow the colour, and the Titles / Hours / Day streak stats count up.
+> 10. **14.78–15.64 s (the drop):** A flash, then about 130 small posters fly in from all around and tile the ribbon N. A brand-gradient colour blend washes over them, with "ALL OF IT." below.
+> 11. **15.64–16.50 s:** "Free." morphs letter by letter into "No sign-up." with a rose full stop.
+> 12. **16.50–18.22 s:** The app's exact launch splash (see Assets).
+> 13. **18.22–20 s:** The splash moves up and the end card appears: "Press play on *everything.*", a white Download for Android pill that gets tapped, and "Free · No sign-up · 222 KB · Android 7.0+".
 >
 > Do not mention servers or pop-ups.

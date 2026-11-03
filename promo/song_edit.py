@@ -42,3 +42,26 @@ with wave.open(out, 'wb') as w:
     w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
     w.writeframes((y * 32767).astype('<i2').tobytes())
 print(f'wrote {out}: {len(y) / SR:.2f} s')
+
+# Loudness, kick and a 24-band spectrum per video frame (60 fps), for the audio-reactive parts of showreel.html
+import json, os
+fps, hop = 60, SR // 60
+mono = y.mean(1)
+rms, low, bands = [], [], []
+f = np.fft.rfftfreq(2048, 1 / SR)
+edges = np.geomspace(60, 12000, 25)
+for i in range(int(len(mono) / SR * fps)):
+    seg = mono[i * hop:i * hop + 2048]
+    seg = np.pad(seg, (0, 2048 - len(seg)))
+    S = np.abs(np.fft.rfft(seg * np.hanning(2048)))
+    rms.append(float(np.sqrt(np.mean(seg ** 2))))
+    low.append(float(S[f < 150].sum()))
+    bands.append([float(S[(f >= edges[k]) & (f < edges[k + 1])].mean()) if np.any((f >= edges[k]) & (f < edges[k + 1])) else 0.0 for k in range(24)])
+rms, low, bands = np.array(rms), np.array(low), np.array(bands)
+rms /= rms.max(); low /= np.percentile(low, 99)
+bands /= np.maximum(np.percentile(bands, 98, axis=0), 1e-9)
+os.makedirs('cache', exist_ok=True)
+with open('cache/env.js', 'w') as fh:
+    fh.write('window.ENV=' + json.dumps({'fps': fps, 'rms': [round(v, 3) for v in rms], 'low': [round(min(v, 1.5), 3) for v in low],
+                                        'bands': [[round(min(v, 1.4), 2) for v in b] for b in bands]}) + ';')
+print('wrote cache/env.js')
