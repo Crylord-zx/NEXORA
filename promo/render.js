@@ -15,6 +15,7 @@ async function worker(w, from, to, browser) {
   page.on('pageerror', e => console.log(`[w${w}] pageerror`, e.message));
   await page.goto('file://' + path.join(dir, 'showreel.html'));
   await page.evaluate(() => window.ready());
+  const cuts = await page.evaluate(() => window.CUTS || []);
   const out = path.join(tmp, `seg${w}.mp4`);
   const vf = SUB > 1 ? `tmix=frames=${SUB},select='eq(mod(n\\,${SUB})\\,${SUB - 1})',setpts=N/(${FPS}*TB)` : 'setpts=N/(30*TB)';
   const ff = spawn('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', String(FPS * SUB), '-i', '-',
@@ -23,7 +24,12 @@ async function worker(w, from, to, browser) {
   for (let f = from; f < to; f++) {
     for (let s = 0; s < SUB; s++) {
       const off = SUB > 1 ? (s / (SUB - 1) - .5) * SHUTTER : 0;
-      const t = Math.max(0, Math.min(DUR - 1e-3, (f + off) / FPS));
+      const tc = f / FPS;
+      let t = Math.max(0, Math.min(DUR - 1e-3, (f + off) / FPS));
+      for (const c of cuts) {                 // never blur across an edit
+        if (tc < c && t >= c) t = c - 1e-4;
+        if (tc >= c && t < c) t = c;
+      }
       await page.evaluate(t => window.render(t), t);
       const buf = await page.screenshot({ type: 'jpeg', quality: 93 });
       if (!ff.stdin.write(buf)) await new Promise(r => ff.stdin.once('drain', r));

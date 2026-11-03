@@ -432,6 +432,8 @@ async function ready() {
   await Promise.all([...document.images].map(im => im.decode().catch(() => {})));
   return true;
 }
+// hard cuts: motion blur must not blend across these (render.js keeps each frame's sub-frames on one side)
+window.CUTS = [...new Set([...Object.values(S).map(v => v[0]), ...TABS.map(w => w[0]), ...WORDS.map(w => w[0]), 11.55])].filter(c => c > 0).sort((a, b) => a - b);
 window.render = render; window.ready = ready;
 const q = new URLSearchParams(location.search);
 if (q.has('t')) ready().then(() => render(+q.get('t')));
