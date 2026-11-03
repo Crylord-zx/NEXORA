@@ -1,5 +1,6 @@
-"""Nexora promo soundtrack, synthesised from scratch (no samples) and cut to the same
-120 BPM grid as showreel.html. Writes soundtrack.wav (48 kHz, stereo, 20 s).
+"""Nexora promo score, synthesised from scratch (no samples): an FM electric piano on 9th chords,
+a half-time groove, sub bass and bells, cut to the same bar lines as showreel.html
+(120 BPM, bars at 0.5 s + 2 s * n). Writes soundtrack.wav (48 kHz, stereo, 20 s).
 Run: python3 soundtrack.py"""
 import wave
 import numpy as np
@@ -7,288 +8,247 @@ import numpy as np
 SR = 48000
 DUR = 20.0
 N = int(SR * DUR)
-rng = np.random.default_rng(7)
-t_all = np.arange(N) / SR
-L = np.zeros(N)
-Rch = np.zeros(N)
+T = np.arange(N) / SR
+rng = np.random.default_rng(11)
+BAR = lambda n: 0.5 + 2.0 * n          # bar n starts here
+BUS = {k: np.zeros((N, 2)) for k in ('keys', 'bells', 'bass', 'drums', 'fx')}
 
 
-def add(sig, at, gain=1.0, pan=0.0):
-    """Mix a mono signal in at time `at` (seconds); pan -1..1."""
-    i = int(at * SR)
-    if i >= N:
+def add(bus, sig, at, gain=1.0, pan=0.0):
+    i = int(round(at * SR))
+    if i >= N or len(sig) == 0:
         return
-    sig = sig[: N - max(i, 0)]
+    if sig.ndim == 1:
+        l, r = np.cos((pan + 1) * np.pi / 4), np.sin((pan + 1) * np.pi / 4)
+        sig = np.stack([sig * l, sig * r], 1) * 1.4142
     if i < 0:
         sig, i = sig[-i:], 0
-    l, r = np.cos((pan + 1) * np.pi / 4), np.sin((pan + 1) * np.pi / 4)
-    L[i:i + len(sig)] += sig * gain * l * 1.414
-    Rch[i:i + len(sig)] += sig * gain * r * 1.414
+    sig = sig[: N - i]
+    BUS[bus][i:i + len(sig)] += sig * gain
 
 
-def env(n, a, d):  # attack/decay in seconds, exponential decay
-    x = np.arange(n) / SR
-    return np.minimum(1, x / max(a, 1e-4)) * np.exp(-x / d)
-
-
-def onepole(x, cut):
-    """Low-pass with a cutoff that may vary per sample (Hz)."""
-    cut = np.broadcast_to(np.asarray(cut, float), x.shape)
-    a = 1 - np.exp(-2 * np.pi * cut / SR)
-    y = np.empty_like(x)
-    s = 0.0
-    for k in range(len(x)):
-        s += a[k] * (x[k] - s)
-        y[k] = s
-    return y
-
-
-def fft_filter(x, lo=None, hi=None):
-    X = np.fft.rfft(x)
-    f = np.fft.rfftfreq(len(x), 1 / SR)
+def fft_filter(x, lo=None, hi=None, order=4):
+    X = np.fft.rfft(x, axis=0)
+    f = np.fft.rfftfreq(x.shape[0], 1 / SR)
     g = np.ones_like(f)
     if hi:
-        g *= 1 / np.sqrt(1 + (f / hi) ** 4)
+        g *= 1 / np.sqrt(1 + (f / hi) ** order)
     if lo:
-        g *= 1 / np.sqrt(1 + (lo / np.maximum(f, 1e-3)) ** 4)
-    return np.fft.irfft(X * g, len(x))
+        g *= 1 / np.sqrt(1 + (lo / np.maximum(f, 1e-3)) ** order)
+    if x.ndim == 2:
+        g = g[:, None]
+    return np.fft.irfft(X * g, x.shape[0], axis=0)
 
 
-def saw(freq, n, phase=0.0):
-    ph = (np.cumsum(np.broadcast_to(freq, (n,)) / SR) + phase) % 1
-    return 2 * ph - 1
-
-
-def note(name):
+def hz(name):
     names = {'C': -9, 'D': -7, 'E': -5, 'F': -4, 'G': -2, 'A': 0, 'B': 2}
     n, octv = name[:-1], int(name[-1])
-    semi = names[n[0]] + (1 if '#' in n else 0) + (octv - 4) * 12
-    return 440 * 2 ** (semi / 12)
+    return 440 * 2 ** ((names[n[0]] + n.count('#') - n.count('b') + (octv - 4) * 12) / 12)
 
 
 # ---------- instruments ----------
-def kick(gain=1.0, big=False):
-    n = int(SR * (0.9 if big else 0.45))
+def epiano(f, dur, vel=.8):
+    """DX-style electric piano: 1:1 FM body with a decaying index, plus a short metallic tine."""
+    n = int(SR * (dur + 1.2))
     x = np.arange(n) / SR
-    f = 42 + 130 * np.exp(-x * 28) + (40 * np.exp(-x * 6) if big else 0)
-    s = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x / (0.38 if big else 0.16))
-    s += 0.5 * rng.standard_normal(n) * np.exp(-x * 300)  # click
-    return np.tanh(s * 1.6) * gain
+    idx = vel * (1.6 * np.exp(-x / .3) + .22)
+    body = np.sin(2 * np.pi * f * x + idx * np.sin(2 * np.pi * f * x))
+    tine = .2 * vel * np.sin(2 * np.pi * f * 14 * x + 1.2 * np.sin(2 * np.pi * f * x)) * np.exp(-x / .018)
+    decay = 1.9 * (220 / f) ** .35
+    env = np.minimum(1, x / .004) * np.exp(-x / decay)
+    rel = np.clip((dur + .25 - x) / .25, 0, 1)        # key release
+    s = (body + tine) * env * rel * vel
+    # suitcase tremolo panning
+    trem = .5 + .16 * np.sin(2 * np.pi * 4.6 * x)
+    return np.stack([s * trem, s * (1 - trem)], 1) * 1.6
 
 
-def clap(gain=1.0):
-    n = int(SR * 0.35)
+def bell(f, vel=.6):
+    n = int(SR * 2.2)
     x = np.arange(n) / SR
-    nz = fft_filter(rng.standard_normal(n), lo=900, hi=5000)
+    s = np.sin(2 * np.pi * f * x + 1.3 * np.exp(-x / .22) * np.sin(2 * np.pi * f * 3.5 * x))
+    s += .25 * np.sin(2 * np.pi * f * 2 * x) * np.exp(-x / .3)
+    return s * np.minimum(1, x / .002) * np.exp(-x / .75) * vel
+
+
+def sub(f, dur, vel=1.0):
+    n = int(SR * (dur + .1))
+    x = np.arange(n) / SR
+    s = np.sin(2 * np.pi * f * x) + .18 * np.sin(4 * np.pi * f * x)
+    env = np.minimum(1, x / .008) * np.clip((dur - x) / .08 + 1, 0, 1) * (.7 + .3 * np.exp(-x / .2))
+    return np.tanh(1.4 * s * env) * vel
+
+
+def kick(vel=1.0):
+    n = int(SR * .6)
+    x = np.arange(n) / SR
+    f = 44 + 70 * np.exp(-x * 30)
+    s = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x / .26)
+    click = fft_filter(rng.standard_normal(n), lo=1500, hi=5000) * np.exp(-x * 400) * .25
+    return np.tanh((s + click) * 1.3) * vel
+
+
+def snap(vel=1.0):
+    n = int(SR * .4)
+    x = np.arange(n) / SR
+    nz = fft_filter(rng.standard_normal(n), lo=1200, hi=7000)
     e = np.zeros(n)
-    for off in (0, .008, .016, .024):
+    for off, d in ((0, .006), (.007, .006), (.014, .09)):
         i = int(off * SR)
-        e[i:] += np.exp(-(x[: n - i]) / (0.012 if off < .024 else 0.11))
-    return nz * e * 0.6 * gain
+        e[i:] += np.exp(-x[: n - i] / d)
+    body = np.sin(2 * np.pi * 190 * x) * np.exp(-x / .04) * .5
+    return (nz * e * .55 + body) * vel
 
 
-def hat(gain=1.0, length=.045):
-    n = int(SR * 0.12)
+def hat(vel=1.0):
+    n = int(SR * .09)
     x = np.arange(n) / SR
-    return fft_filter(rng.standard_normal(n), lo=7000) * np.exp(-x / length) * gain
+    return fft_filter(rng.standard_normal(n), lo=7500, hi=15000) * np.exp(-x / .022) * vel
 
 
-def boom(gain=1.0, length=2.2):
-    """Trailer impact: sub drop, distorted body, noise crash."""
-    n = int(SR * length)
+def swell(dur, vel=1.0, lo=300, hi=6000):
+    """Soft rising air, for the run into a bar."""
+    n = int(SR * dur)
     x = np.arange(n) / SR
-    f = 30 + 60 * np.exp(-x * 5)
-    sub = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x / 0.9)
-    body = np.tanh(3 * np.sin(2 * np.pi * np.cumsum(55 + 90 * np.exp(-x * 18)) / SR)) * np.exp(-x / .25)
-    crash = fft_filter(rng.standard_normal(n), lo=300, hi=9000) * np.exp(-x / 0.55)
-    return (sub * 1.0 + body * .45 + crash * .35) * gain
+    nz = fft_filter(rng.standard_normal(n), lo=lo, hi=hi)
+    return nz * (x / dur) ** 3 * vel
 
 
-def riser(length, f0=200, f1=4000, gain=1.0):
-    n = int(SR * length)
+def click(vel=1.0):
+    n = int(SR * .03)
     x = np.arange(n) / SR
-    p = x / length
-    nz = onepole(rng.standard_normal(n), f0 * (f1 / f0) ** p)
-    nz = nz - onepole(nz, 120)
-    tone = np.sin(2 * np.pi * np.cumsum(110 * 2 ** (p * 4)) / SR) * 0.25
-    return (nz * 2.2 + tone) * (p ** 2.2) * gain
+    return (np.sin(2 * np.pi * 2600 * x) * .6 + fft_filter(rng.standard_normal(n), lo=3000) * .4) * np.exp(-x / .004) * vel
 
 
-def whoosh(length=.5, gain=1.0):
-    n = int(SR * length)
+def boom(vel=1.0):
+    n = int(SR * 2.5)
     x = np.arange(n) / SR
-    p = x / length
-    bell = np.sin(np.pi * p) ** 2
-    nz = onepole(rng.standard_normal(n), 300 + 5000 * np.sin(np.pi * p) ** 1.5)
-    nz = nz - onepole(nz, 200)
-    return nz * bell * .9 * gain
+    f = 32 + 40 * np.exp(-x * 6)
+    return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-x / 1.0) * np.minimum(1, x / .005) * vel
 
 
-def blip(freq=1800, gain=1.0, length=.06):
-    n = int(SR * length)
-    x = np.arange(n) / SR
-    return (np.sin(2 * np.pi * freq * x) + .3 * np.sin(4 * np.pi * freq * x)) * env(n, .002, length / 3) * gain
+# ---------- harmony ----------
+CH = {
+    'Fmaj9': ('F2', ['A3', 'C4', 'E4', 'G4']),
+    'G69':   ('G2', ['B3', 'D4', 'E4', 'A4']),
+    'Am9':   ('A2', ['C4', 'E4', 'G4', 'B4']),
+    'Em11':  ('E2', ['G3', 'B3', 'D4', 'A4']),
+    'Dm9':   ('D2', ['F3', 'A3', 'C4', 'E4']),
+    'Aadd9': ('A1', ['E3', 'A3', 'B3', 'C4', 'E4']),
+}
 
-
-def pluck(freq, length=.35, gain=1.0):
-    n = int(SR * length)
-    x = np.arange(n) / SR
-    s = saw(freq, n) * .5 + np.sin(2 * np.pi * freq * x)
-    s = onepole(s, 600 + 6000 * np.exp(-x * 18))
-    return s * env(n, .003, .12) * gain
-
-
-def supersaw(freqs, length, cutoff=1800):
-    n = int(SR * length)
-    s = np.zeros(n)
-    for f in freqs:
-        for d in (-.12, -.05, 0, .05, .12):
-            s += saw(f * 2 ** (d / 12), n, rng.random())
-    s = fft_filter(s / (len(freqs) * 5), hi=cutoff)
-    return s
-
+def chord(name, at, dur, vel=.7, strum=.012):
+    root, tones = CH[name]
+    for k, nme in enumerate(tones):
+        add('keys', epiano(hz(nme), dur, vel * (1 - .06 * k)), at + k * strum, .32)
 
 # ---------- arrangement ----------
-BEAT = .5
-CHORDS = [('A2', ['A3', 'C4', 'E4', 'A4']), ('F2', ['F3', 'A3', 'C4', 'F4']),
-          ('C3', ['C4', 'E4', 'G4', 'C5']), ('G2', ['G3', 'B3', 'D4', 'G4'])]
+# pickup: reversed chord swelling into bar 1
+rev = epiano(hz('E4'), 1.0, .7)[::-1][-int(SR * .5):] + epiano(hz('A3'), 1.0, .6)[::-1][-int(SR * .5):]
+add('keys', rev * np.linspace(0, 1, len(rev))[:, None] ** 2, 0.0, .35)
 
-def chord_at(t):
-    return CHORDS[int(max(0, t - 2) // 4) % 4]
+# bar 1 (library) and bar 2 (Hindi)
+chord('Fmaj9', BAR(0), 1.9, .5)
+add('bass', sub(hz('F1'), 1.9, .3), BAR(0))
+chord('G69', BAR(1), 1.9, .55)
+add('bass', sub(hz('G1'), 1.9, .38), BAR(1))
+for b in range(8):                          # a quiet pulse joins in bar 2
+    at = BAR(1) + b * .25
+    add('drums', hat(.16 if b % 2 else .09), at + (.02 if b % 2 else 0), pan=.3)
+add('drums', kick(.45), BAR(1)); add('drums', kick(.35), BAR(1) + 1.0)
+add('fx', click(.25), 3.35, pan=-.2)
+add('fx', swell(1.0, .22), BAR(2) - 1.0)
 
-# intro: drone + shimmer + riser + reverse swell into the 2.0 hit
-n = int(SR * 2.3)
-x = np.arange(n) / SR
-drone = (np.sin(2 * np.pi * 55 * x) + .5 * np.sin(2 * np.pi * 82.4 * x) + .25 * saw(110, n)) * np.minimum(1, x / 1.6)
-add(fft_filter(drone, hi=600) * .35, 0)
-shimmer = sum(np.sin(2 * np.pi * f * x + i) for i, f in enumerate([1760, 2217, 2637, 3520])) * (.5 + .5 * np.sin(2 * np.pi * 6 * x)) * (x / 2.3) ** 2
-add(shimmer * .05, 0, pan=.3)
-add(riser(2.0, 150, 6000), 0.0, .4)
-# logo strokes: three soft hits as the N draws
-for at, f in ((.35, 220), (.7, 277), (1.05, 330)):
-    add(pluck(f, .6) * .5, at, pan=(-.4, 0, .4)[[.35, .7, 1.05].index(at)])
-    add(kick(.35), at)
+# bar 3 (brand): the hit
+add('fx', boom(.9), BAR(2))
+add('drums', kick(.9), BAR(2))
+chord('Am9', BAR(2), 1.9, .9, strum=.02)
+add('bass', sub(hz('A1'), 1.9, .75), BAR(2))
+for at, nme in ((BAR(2) + .3, 'E5'), (BAR(2) + .55, 'B5'), (BAR(2) + .8, 'C6'), (BAR(2) + 1.3, 'E6')):
+    add('bells', bell(hz(nme), .5), at, pan=.25)
+add('fx', swell(.5, .18), BAR(3) - .5)
 
-# main hits
-add(boom(1.3, 2.5), 2.0)
-add(kick(1.0, big=True), 2.0)
+# bars 4-7: the groove (half-time: kick on 1 and the "and" of 2, snap on 3)
+prog = ['Fmaj9', 'G69', 'Am9', 'Em11']
+melody = {0: [(0, 'E5'), (.5, 'G5'), (1.25, 'A5')], 1: [(0, 'B5'), (.75, 'A5'), (1.5, 'E5')],
+          2: [(0, 'C6'), (.75, 'B5'), (1.25, 'G5')], 3: [(0, 'B5'), (.75, 'G5'), (1.25, 'A5')]}
+for k, name in enumerate(prog):
+    b0 = BAR(3 + k)
+    chord(name, b0, .9, .7)                         # stab, then a re-strike on the "and" of 2
+    chord(name, b0 + .75, 1.15, .5, strum=.008)
+    root = CH[name][0]
+    lo = hz(root) / 2
+    for at, d, v in ((0, .7, .8), (.75, .2, .6), (1.0, .45, .7), (1.5, .45, .7)):
+        add('bass', sub(lo, d, v), b0 + at)
+    add('drums', kick(.85), b0); add('drums', kick(.6), b0 + .75); add('drums', kick(.45), b0 + 1.75)
+    add('drums', snap(.5), b0 + 1.0, pan=.05)
+    for h in range(8):
+        add('drums', hat(.2 if h % 2 else .11), b0 + h * .25 + (.025 if h % 2 else 0), pan=(.35 if h % 2 else -.2))
+    for at, nme in melody[k]:
+        add('bells', bell(hz(nme), .38), b0 + at, pan=-.3 + .2 * (at > .5))
+for ti in (8.48, 8.98, 9.48, 9.98, 11.05):
+    add('fx', click(.3), ti, pan=.15)
+add('fx', swell(.7, .12, 500, 9000), 11.25)
 
-# drums 2.0 to 16.0
-for k in range(28):
-    at = 2.0 + k * BEAT
-    if k > 0:
-        add(kick(.85), at)
-    if k % 2 == 1:
-        add(clap(.55), at, pan=.05)
-    add(hat(.22), at + .25, pan=.35)
-    if at >= 8.0:
-        add(hat(.1, .025), at + .125, pan=-.35)
-        add(hat(.1, .025), at + .375, pan=-.35)
+# bar 8 (words): stops, one chord per word
+for at, name in ((14.5, 'Dm9'), (15.0, 'Fmaj9'), (15.5, 'G69')):
+    chord(name, at, .45, .8, strum=.006)
+    add('bass', sub(hz(CH[name][0]) / 2, .42, .85), at)
+    add('drums', kick(.8), at)
+add('bells', bell(hz('E6'), .4), 16.0, pan=.2)
+add('fx', swell(.5, .25), BAR(8) - .5)
 
-# sidechain envelope from the kick grid
+# bar 9 to the end: resolve
+add('fx', boom(.8), BAR(8))
+add('drums', kick(.85), BAR(8))
+chord('Aadd9', BAR(8), 3.0, .85, strum=.025)
+add('bass', sub(hz('A1'), 3.0, .7), BAR(8))
+for at, nme in ((BAR(8) + .5, 'A5'), (BAR(8) + 1.0, 'G5'), (BAR(8) + 1.5, 'E5'), (BAR(8) + 2.25, 'B4')):
+    add('bells', bell(hz(nme), .42), at, pan=.2)
+
+# ---------- mix ----------
+# sidechain keys and bass to the kick pattern
 duck = np.ones(N)
-for k in range(28):
-    i = int((2.0 + k * BEAT) * SR)
-    m = min(N - i, int(SR * .4))
-    duck[i:i + m] = np.minimum(duck[i:i + m], 1 - .75 * np.exp(-np.arange(m) / SR / .09))
+kicks = [BAR(1), BAR(1) + 1] + [BAR(3 + k) + o for k in range(4) for o in (0, .75, 1.75)]
+for at in kicks:
+    i = int(at * SR); m = min(N - i, int(SR * .35))
+    duck[i:i + m] = np.minimum(duck[i:i + m], 1 - .45 * np.exp(-np.arange(m) / SR / .1))
+BUS['keys'] *= duck[:, None]
+BUS['bass'] *= (1 - (1 - duck) * .6)[:, None]
 
-# pad 2.0 to 18.0
-pad = np.zeros(N)
-for b in range(4):
-    root, tones = CHORDS[b]
-    at = 2.0 + b * 4
-    seg = supersaw([note(n) for n in tones], 4.2, cutoff=900 + b * 350)
-    i = int(at * SR)
-    fade = np.minimum(1, np.arange(len(seg)) / (SR * .05)) * np.minimum(1, (len(seg) - np.arange(len(seg))) / (SR * .2))
-    pad[i:i + len(seg)] += seg[: N - i] * fade[: N - i]
-pad *= duck * np.clip((t_all - 2.0) / .4, 0, 1)
-add(pad * .5, 0, pan=-.2)
-add(np.roll(pad, int(SR * .012)) * .5, 0, pan=.2)
 
-# bass: off-beat eighths from 5.0
-for k in range(int((16 - 5) / .25)):
-    at = 5.0 + k * .25
-    if k % 2 == 0:
-        continue
-    root = note(chord_at(at)[0])
-    m = int(SR * .22)
-    xx = np.arange(m) / SR
-    b = onepole(saw(root, m), 500 + 1400 * np.exp(-xx * 20)) * env(m, .004, .12)
-    add(np.tanh(b * 2) * .5, at)
-
-# arp: sixteenths 8.0 to 16.0
-pattern = [0, 1, 2, 3, 2, 1, 2, 3]
-for k in range(32 * 1):
-    at = 8.0 + k * .25
-    tones = chord_at(at)[1]
-    f = note(tones[pattern[k % 8]]) * 2
-    add(pluck(f, .3, .22), at, pan=(-.5 if k % 2 else .5))
-    add(pluck(f, .3, .08), at + .375, pan=(.5 if k % 2 else -.5))  # dotted-eighth echo
-
-# transitions
-for at, ln, g in ((4.5, .55, 1.0), (7.75, .55, 1.1), (11.55, .65, .9), (13.65, .45, .8), (15.7, .4, 1.0)):
-    add(whoosh(ln, g), at, pan=(.3 if at < 10 else -.3))
-add(riser(.5, 400, 8000, .25), 4.5)
-
-# UI: taps, chips, accent switches
-for at in (9.92, 10.17, 10.42, 11.4):
-    add(blip(2400, .25, .035), at, pan=.1)
-for at in (9.0, 9.55, 9.72, 11.0, 12.3, 12.6, 12.9, 14.3, 14.8, 15.3):
-    add(blip(1500, .18, .08), at, pan=.2)
-    add(blip(2250, .1, .08), at + .03, pan=-.2)
-for k, at in enumerate((14.25, 14.75, 15.25, 15.75)):
-    add(pluck(note('E5') * 2 ** (k * 2 / 12), .5, .35), at, pan=(k - 1.5) / 2)
-add(boom(.35, .8), 12.15)
-
-# stats 16.0 to 18.0: slams on each card, snare roll and riser into the last hit
-for at in (16.0, 16.5, 17.0, 17.5):
-    add(boom(.55, .6), at)
-    add(kick(.9), at)
-    add(clap(.35), at)
-for k in range(16):
-    at = 16.0 + k * .125
-    if at < 17.875:
-        add(clap(.12 + .25 * k / 16), at + .0625 * (k % 2), pan=.1)
-add(riser(1.9, 300, 9000, .45), 16.0)
-add(whoosh(.4, .9), 17.6)
-
-# finale
-add(boom(1.4, 2.0), 18.0)
-add(kick(1.0, big=True), 18.0)
-n = int(SR * 2.0)
-x = np.arange(n) / SR
-fin = supersaw([note(n) for n in ('A3', 'C4', 'E4', 'A4', 'E5')], 2.0, cutoff=2600) * np.exp(-x / 1.4)
-add(fin * .55, 18.0, pan=-.15)
-add(np.roll(fin, int(SR * .015)) * .55, 18.0, pan=.15)
-add(blip(3520, .12, .5), 19.15, pan=.4)  # button shine
-add(pluck(note('A5'), .8, .25), 18.55, pan=0)
-
-# ---------- reverb (FFT convolution, decaying noise IR) ----------
-def reverb(x, secs=1.6, mix=.22, seed=1):
+def reverb(x, secs=2.6, pre=.025, seed=1):
     r = np.random.default_rng(seed)
     m = int(SR * secs)
-    ir = r.standard_normal(m) * np.exp(-np.arange(m) / SR / (secs / 5))
-    ir = fft_filter(ir, lo=200, hi=7000)
-    ir /= np.sqrt(np.sum(ir ** 2))
-    size = 1 << int(np.ceil(np.log2(len(x) + m)))
-    wet = np.fft.irfft(np.fft.rfft(x, size) * np.fft.rfft(ir, size), size)[: len(x)]
-    return x + wet * mix * 3
+    tt = np.arange(m) / SR
+    ir = r.standard_normal((m, 2)) * np.exp(-tt / (secs / 6.5))[:, None]
+    ir = fft_filter(ir, lo=250, hi=5500)
+    ir = np.concatenate([np.zeros((int(pre * SR), 2)), ir])
+    ir /= np.sqrt(np.sum(ir ** 2, 0))
+    size = 1 << int(np.ceil(np.log2(x.shape[0] + ir.shape[0])))
+    return np.fft.irfft(np.fft.rfft(x, size, axis=0) * np.fft.rfft(ir, size, axis=0), size, axis=0)[: x.shape[0]]
 
-L = reverb(L, seed=1)
-Rch = reverb(Rch, seed=2)
 
-# ---------- master ----------
-out = np.stack([L, Rch], 1)
-out = fft_filter(out[:, 0], lo=25)[:, None] * [1, 0] + fft_filter(out[:, 1], lo=25)[:, None] * [0, 1]
-fade = np.clip((DUR - t_all) / .35, 0, 1)[:, None]
-out *= fade
-out /= np.max(np.abs(out)) + 1e-9
-out = np.tanh(out * 1.8) / np.tanh(1.8)  # glue / soft clip
-out *= 10 ** (-1 / 20) / np.max(np.abs(out))
-pcm = (out * 32767).astype('<i2')
+keys = fft_filter(BUS['keys'], lo=90, hi=9000)
+bells = BUS['bells']
+drums = BUS['drums']
+send = keys * .5 + bells * .9 + drums * .12 + BUS['fx'] * .3
+wet = reverb(send)
+mix = keys * .9 + bells * .5 + BUS['bass'] * .8 + drums * .9 + BUS['fx'] * .6 + wet * .55
+mix = fft_filter(mix, lo=28)
+
+# gentle bus compression (smoothed RMS), then a soft clip
+rms = np.sqrt(np.convolve(np.mean(mix ** 2, 1), np.ones(2400) / 2400, mode='same')) + 1e-6
+target = .3
+gain = np.where(rms > target, (target / rms) ** .3, 1.0)
+gain = np.convolve(gain, np.ones(1200) / 1200, mode='same')
+mix *= gain[:, None]
+mix *= np.clip((DUR - T) / .45, 0, 1)[:, None] * np.clip(T / .02, 0, 1)[:, None]
+mix /= np.max(np.abs(mix)) + 1e-9
+mix = np.tanh(mix * 1.4) / np.tanh(1.4)
+mix *= 10 ** (-1 / 20) / np.max(np.abs(mix))
+pcm = (mix * 32767).astype('<i2')
 with wave.open('soundtrack.wav', 'wb') as w:
-    w.setnchannels(2)
-    w.setsampwidth(2)
-    w.setframerate(SR)
+    w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)
     w.writeframes(pcm.tobytes())
 print('wrote soundtrack.wav', pcm.shape)
