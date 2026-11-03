@@ -1,12 +1,12 @@
 // Renders showreel.html to nexora-promo-master.mp4 (and the lighter nexora-promo.mp4): 1080x1920, 30 fps, 20 s, with real motion blur
 // (each output frame averages SUB sub-frames spread over a 180-degree shutter) and soundtrack.wav.
-// Usage: node render.js [workers=4] [sub=4]
 const { chromium } = require('playwright');
 const { spawn, execFileSync } = require('child_process');
 const path = require('path'), fs = require('fs');
 
-const FPS = 30, DUR = 20, FRAMES = FPS * DUR;
-const WORKERS = +(process.argv[2] || 4), SUB = +(process.argv[3] || 4), SHUTTER = .5;
+// Usage: node render.js [workers=4] [sub=2] [fps=60]; the length comes from the page (window.DURATION)
+const WORKERS = +(process.argv[2] || 4), SUB = +(process.argv[3] || 2), FPS = +(process.argv[4] || 60), SHUTTER = .5;
+let DUR = 20, FRAMES = FPS * DUR;
 const dir = __dirname, tmp = path.join(dir, 'cache', 'segments');
 fs.mkdirSync(tmp, { recursive: true });
 
@@ -17,9 +17,9 @@ async function worker(w, from, to, browser) {
   await page.evaluate(() => window.ready());
   const cuts = await page.evaluate(() => window.CUTS || []);
   const out = path.join(tmp, `seg${w}.mp4`);
-  const vf = SUB > 1 ? `tmix=frames=${SUB},select='eq(mod(n\\,${SUB})\\,${SUB - 1})',setpts=N/(${FPS}*TB)` : 'setpts=N/(30*TB)';
+  const vf = SUB > 1 ? `tmix=frames=${SUB},select='eq(mod(n\\,${SUB})\\,${SUB - 1})',setpts=N/(${FPS}*TB)` : `setpts=N/(${FPS}*TB)`;
   const ff = spawn('ffmpeg', ['-loglevel', 'error', '-y', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', String(FPS * SUB), '-i', '-',
-    '-vf', `${vf},format=yuv420p`, '-r', String(FPS), '-c:v', 'libx264', '-preset', 'medium', '-crf', '14', '-x264-params', 'keyint=30', out], { stdio: ['pipe', 'inherit', 'inherit'] });
+    '-vf', `${vf},format=yuv420p`, '-r', String(FPS), '-c:v', 'libx264', '-preset', 'medium', '-crf', '14', '-x264-params', `keyint=${FPS}`, out], { stdio: ['pipe', 'inherit', 'inherit'] });
   const t0 = Date.now();
   for (let f = from; f < to; f++) {
     for (let s = 0; s < SUB; s++) {
@@ -44,6 +44,9 @@ async function worker(w, from, to, browser) {
 
 (async () => {
   const t0 = Date.now();
+  { const b = await chromium.launch(); const p = await b.newPage(); await p.goto('file://' + path.join(dir, 'showreel.html'));
+    DUR = await p.evaluate(() => window.DURATION || 20); FRAMES = Math.round(FPS * DUR); await b.close(); }
+  console.log(`${FRAMES} frames at ${FPS} fps, ${SUB} sub-frames each`);
   const browsers = await Promise.all(Array.from({ length: WORKERS }, () => chromium.launch()));
   const per = Math.ceil(FRAMES / WORKERS);
   const segs = await Promise.all(browsers.map((b, w) => worker(w, w * per, Math.min(FRAMES, (w + 1) * per), b)));
