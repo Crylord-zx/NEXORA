@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you refer to Nexora, please cite it as below."
+title: "Nexora"
+abstract: "A free Android app for movies, web series and anime with Hindi audio, offline downloads up to 4K and a player made for phones, with a separate app for Android TV and Google TV."
+type: software
+version: "1.3.0"
+date-released: "2026-11-23"
+authors:
+  - name: "Crylord-zx"
+repository-code: "https://github.com/Crylord-zx/NEXORA"
+url: "https://nexora-apk.vercel.app"
+keywords:
+  - android
+  - android-tv
+  - google-tv
+  - movies
+  - web-series
+  - anime
+  - hindi
+  - media-player
+  - offline-downloads
