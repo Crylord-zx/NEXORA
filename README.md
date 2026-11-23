@@ -25,7 +25,7 @@ Hindi audio, downloads up to 4K, a player built for phones, and no account to ma
 
 | | Phone app | TV app |
 |---|---|---|
-| **Latest version** | 1.3.0 (build 11) | 1.0.0 (build 9) |
+| **Latest version** | 1.4.0 (build 12) | 1.0.0 (build 9) |
 | **File** | `nexora.apk` | `Nexora-TV.apk` |
 | **Size** | about 5.4 MB | about 1.6 MB |
 | **Android** | 7.0 or newer | 7.0 or newer (Android TV, Google TV) |
@@ -37,7 +37,7 @@ Hindi audio, downloads up to 4K, a player built for phones, and no account to ma
 
 | App | Download | SHA-256 |
 |---|---|---|
-| Nexora for Android | [nexora.apk](https://github.com/Crylord-zx/NEXORA/releases/latest/download/nexora.apk) | `bdab65eaf583b359383a85d1cf75dfa5da92565eaf2489c5f99e610175c0b1ac` |
+| Nexora for Android | [nexora.apk](https://github.com/Crylord-zx/NEXORA/releases/latest/download/nexora.apk) | `a7e3c5afba871df9ca8214f2c2cc68a604d89b7876a4221606f9546e2290f1bf` |
 | Nexora for Android TV | [Nexora-TV.apk](https://github.com/Crylord-zx/NEXORA/releases/latest/download/Nexora-TV.apk) | `946d0813a7d6ec6fad771b01ff94809da8296d1c31d1053a4f82bee318f650c2` |
 
 Every release is on the [Releases page](https://github.com/Crylord-zx/NEXORA/releases). See [Verify your download](#verify-your-download) to check the file you got.
