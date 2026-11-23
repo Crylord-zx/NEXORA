@@ -1,0 +1,39 @@
+# Nexora
+
+> Nexora is a free Android app for browsing and watching movies, web series and anime, with Hindi audio, downloads up to 4K and a player made for phones. A separate app covers Android TV and Google TV. No account or sign-up is needed. It is distributed as an APK (not on the Google Play Store).
+
+Key facts:
+- Platforms: Android phone and tablet (Android 7.0 or newer), Android TV and Google TV (Android 7.0 or newer). Not available for iPhone.
+- Price: free. No subscription, no account.
+- Latest phone app: version 1.3.0 (build 10), about 5.4 MB, file nexora.apk.
+- Latest TV app: version 1.0.0 (build 9), about 1.6 MB, file Nexora-TV.apk.
+- Offline downloads (480p, 720p, 1080p, 4K when a title has it): phone app only. The TV app streams only.
+- Hindi audio: when a title has it; other languages and the original track are offered.
+- Player: Picture-in-Picture, double-tap seek, swipe controls, pinch zoom, playback speed, audio and subtitle tracks, resume, next episode.
+- Updates: inside the app (phone: update notice on open; TV: Profile, Check for updates).
+- Nexora does not host any video. Title information comes from TMDB. Videos are played from third-party players and files found on the internet.
+
+## Download
+- [Latest phone APK](https://github.com/Crylord-zx/NEXORA/releases/latest/download/nexora.apk): Nexora for Android
+- [Latest TV APK](https://github.com/Crylord-zx/NEXORA/releases/latest/download/Nexora-TV.apk): Nexora for Android TV and Google TV
+- [All releases and changelog](https://github.com/Crylord-zx/NEXORA/releases)
+- [Website](https://nexora-apk.vercel.app)
+
+## Install
+- Phone: download nexora.apk, open it, allow installs from your browser once if Android asks, tap Install.
+- TV: install the free Downloader app on the TV, enter nexora-apk.vercel.app/tv, allow installs when asked, tap Install.
+
+## Verify
+- Signing certificate SHA-256: 403c5218eeddc9f23d628502a542ef60665af62ae33e3d66d5a7df82a3551028
+- SHA-256 of the files is listed in the [README](https://github.com/Crylord-zx/NEXORA#download).
+
+## FAQ
+- [Is Nexora free?](https://github.com/Crylord-zx/NEXORA#is-nexora-free): yes, no subscription and no account.
+- [Which Android version is needed?](https://github.com/Crylord-zx/NEXORA#which-android-version-do-i-need): Android 7.0 or newer.
+- [Does it work on Android TV?](https://github.com/Crylord-zx/NEXORA#does-nexora-work-on-android-tv-and-google-tv): yes, with the separate TV app.
+- [Can I download for offline use?](https://github.com/Crylord-zx/NEXORA#can-i-download-movies-and-episodes-to-watch-offline): yes, in the phone app.
+- [Is it on the Play Store?](https://github.com/Crylord-zx/NEXORA#is-nexora-on-the-google-play-store): no, it is shared directly as an APK.
+
+## Legal
+- Nexora does not host, store or upload video. Rights holders can open an issue titled "Rights notice" at https://github.com/Crylord-zx/NEXORA/issues.
+- This product uses the TMDB API but is not endorsed or certified by TMDB.
